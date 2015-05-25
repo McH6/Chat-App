@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.mch.exception.ChatMessageException;
 import com.mch.model.ChatMessage;
 import com.mch.view.ServerGUInterface;
 
@@ -54,18 +55,24 @@ public class Server {
 				displayEvent(waitMsg);
 
 				// make a handler thread
-				ClientHandlerThread t = new ClientHandlerThread(socket);
-				clientThreads.put(t.username, t); // save it in the Map
-				t.start();
+				ClientHandlerThread t = null;
+				try {
+					t = new ClientHandlerThread(socket);
+					// if returned with exception thread wont be created
+					clientThreads.put(t.username, t); // save it in the Map
+					t.start();
+				} catch (ChatMessageException e) {
+					displayEvent(e.getMessage());
+				}
+				// continue with next iteration
 			}
-			// I was asked to stop
+			// Error occurred try and stop
 			try {
 				stop();
 			} catch (Exception e) {
 				displayEvent("Exception closing the server and clients: " + e);
 			}
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			// the serverSocket.accept() will return with an Exception,
 			// but no problems here
 			displayEvent("Server terminated: " + e.getMessage());
@@ -108,7 +115,7 @@ public class Server {
 		private String date;
 
 		// constructor
-		ClientHandlerThread(Socket socket) {
+		ClientHandlerThread(Socket socket) throws ChatMessageException {
 			this.socket = socket;
 			/* Creating both Data Stream */
 			System.out.println("Thread trying to create Input/Output Streams");
@@ -118,16 +125,28 @@ public class Server {
 				sInput = new ObjectInputStream(socket.getInputStream());
 				// read the user name String, the only time a string is sent,
 				// expect ChatMessage after this
+				System.out.println("here");
 				username = (String) sInput.readObject();
+				
+				// check if user name is not taken
+				if (clientThreads.get(username) != null) {
+					// reply and abort
+					sOutput.writeObject(new ChatMessage<Boolean>(
+							ChatMessage.LOGIN, false, null, username));
+					throw new ChatMessageException("User Name taken.");
+				} else {
+					// reply positively
+					sOutput.writeObject(new ChatMessage<Boolean>(
+							ChatMessage.LOGIN, true, null, username));
+				}
+
 				displayEvent(username + " just connected.");
 			} catch (IOException e) {
-				displayEvent("Exception creating new Input/output Streams: "
-						+ e);
-				return;
-			}
-			// have to catch ClassNotFoundException
-			// but I read a String, I am sure it will work
-			catch (ClassNotFoundException e) {
+				throw new ChatMessageException(
+						"Exception creating new Input/output Streams.");
+			} catch (ClassNotFoundException e) {
+				throw new ChatMessageException(
+						"Unexpected object read form stream.");
 			}
 			date = new Date().toString() + "\n";
 		}
@@ -155,7 +174,7 @@ public class Server {
 				switch (cm.getType()) {
 				case ChatMessage.MESSAGE:
 					if (cm.getTo() != null)
-						forwardMessage((ChatMessage<String>) cm);
+						forwardMessage((ChatMessage<String>) cm, this);
 					break;
 				case ChatMessage.LOGOUT:
 					displayEvent(username
@@ -220,7 +239,8 @@ public class Server {
 		}
 
 		// write to specific Client
-		private synchronized boolean forwardMessage(ChatMessage<String> cm) {
+		private synchronized boolean forwardMessage(ChatMessage<String> cm,
+				ClientHandlerThread fromC) {
 			// add HH:mm:ss and \n to the message
 			String time = simpleDateFormater.format(new Date());
 			String messageLf = time + " " + cm.getMessage() + "\n";
@@ -230,6 +250,13 @@ public class Server {
 			System.out.println(cm.getTo());
 			System.out.println(clientThreads);
 			ClientHandlerThread toC = clientThreads.get(cm.getTo());
+			// if client is not online send message back to sender
+			if (toC == null) {
+				toC = fromC;
+				cm = new ChatMessage<String>(cm.getType(), "Client "
+						+ cm.getTo() + " does not exist anymore", cm.getFrom(),
+						cm.getFrom());
+			}
 			Socket socket = toC.socket;
 			ObjectOutputStream sOutput = toC.sOutput;
 			// if Client is still connected send the message to it

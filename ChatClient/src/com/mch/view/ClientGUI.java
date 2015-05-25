@@ -30,7 +30,7 @@ public class ClientGUI extends JFrame implements ActionListener,
 	// to hold the user name and later on the messages
 	private JTextField txtUserMessage;
 	// to hold the server address an the port number
-	private JTextField tfServer, tfPort;
+	private JTextField txtServer, txtPort;
 	// to Logout and get the list of the users
 	private JButton btnLogin, btnLogout, btnWhoIsIn, btnSend;
 	// display messages here
@@ -59,20 +59,23 @@ public class ClientGUI extends JFrame implements ActionListener,
 		// The NorthPanel with:
 		JPanel northPanel = new JPanel(new GridLayout(4, 1));
 		// the server name and the port number
-		JPanel serverAndPort = new JPanel(new GridLayout(1, 5, 1, 3));
+		JPanel serverAndPort = new JPanel(new GridLayout(1, 2));
 		JPanel panelUserSend = new JPanel();
-		// the two JTextField with default value for server address and port
-		// number
-		tfServer = new JTextField(serverHost);
-		tfPort = new JTextField("" + serverPort);
-		tfPort.setHorizontalAlignment(SwingConstants.RIGHT);
 
-		serverAndPort.add(new JLabel("Server Address:  "));
-		serverAndPort.add(tfServer);
-		serverAndPort.add(new JLabel("Port Number:  "));
-		serverAndPort.add(tfPort);
-		serverAndPort.add(new JLabel(""));
-		// adds the Server an port field to the GUI
+		JPanel panelServer = new JPanel(new BorderLayout());
+		JPanel panelPort = new JPanel(new BorderLayout());
+		txtServer = new JTextField(serverHost);
+		txtServer.setHorizontalAlignment(JTextField.CENTER);
+		txtPort = new JTextField("" + serverPort);
+		txtPort.setHorizontalAlignment(SwingConstants.CENTER);
+
+		panelServer.add(new JLabel("Server Address:  "), BorderLayout.WEST);
+		panelServer.add(txtServer, BorderLayout.CENTER);
+		panelPort.add(new JLabel("Port Number:  "), BorderLayout.WEST);
+		panelPort.add(txtPort, BorderLayout.CENTER);
+		// adds the Server and port field to the GUI
+		serverAndPort.add(panelServer);
+		serverAndPort.add(panelPort);
 		northPanel.add(serverAndPort);
 
 		// the Label and the TextField
@@ -153,11 +156,11 @@ public class ClientGUI extends JFrame implements ActionListener,
 			if (username.isEmpty())
 				return;
 			// empty serverAddress ignore it
-			String server = tfServer.getText().trim();
+			String server = txtServer.getText().trim();
 			if (server.isEmpty())
 				return;
 			// empty or invalid port number, ignore it
-			String portNumber = tfPort.getText().trim();
+			String portNumber = txtPort.getText().trim();
 			if (portNumber.isEmpty())
 				return;
 			int port = 0;
@@ -184,8 +187,8 @@ public class ClientGUI extends JFrame implements ActionListener,
 			btnWhoIsIn.setEnabled(true);
 			btnSend.setEnabled(true);
 			// disable the Server and Port JTextField
-			tfServer.setEditable(false);
-			tfPort.setEditable(false);
+			txtServer.setEditable(false);
+			txtPort.setEditable(false);
 			// Action listener for when the user enter a message
 			txtUserMessage.addActionListener(this);
 			client.doGetUserList();
@@ -211,11 +214,11 @@ public class ClientGUI extends JFrame implements ActionListener,
 		label.setText("Enter your username below");
 		txtUserMessage.setText("Anonymous");
 		// reset port number and host name as a construction time
-		tfPort.setText("" + serverPort);
-		tfServer.setText(serverHost);
+		txtPort.setText("" + serverPort);
+		txtServer.setText(serverHost);
 		// let the user change them
-		tfServer.setEditable(false);
-		tfPort.setEditable(false);
+		txtServer.setEditable(false);
+		txtPort.setEditable(false);
 		// don't react to a <CR> after the user name
 		txtUserMessage.removeActionListener(this);
 		connected = false;

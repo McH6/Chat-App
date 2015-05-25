@@ -6,10 +6,9 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
 
+import com.mch.exception.ChatMessageException;
 import com.mch.model.ChatMessage;
 import com.mch.view.ClientGUInterface;
-
-import exception.ChatMessageException;
 
 /*
  * The Client that can be run both as a console or a GUI
@@ -35,8 +34,8 @@ public class Client {
 		this.cg = cg;
 	}
 
-	
 	// start the dialog
+	@SuppressWarnings("unchecked")
 	public boolean start() {
 		// try to connect to the server
 		try {
@@ -61,9 +60,7 @@ public class Client {
 			return false;
 		}
 
-		// creates the Thread to listen from the server
-		new ListenFromServer().start();
-		// Send our user name to the server this is the only message that we
+		// Send user name to the server this is the only message that we
 		// will send as a String. All other messages will be ChatMessage objects
 		try {
 			sOutput.writeObject(username);
@@ -72,6 +69,25 @@ public class Client {
 			disconnect();
 			return false;
 		}
+
+		// wait the server response if the user name is not taken, block the
+		// client GUI
+		ChatMessage<Boolean> cm = null;
+		try {
+			cm = (ChatMessage<Boolean>) sInput.readObject();
+		} catch (ClassNotFoundException e) {
+			updateView(e.getMessage());
+		} catch (IOException e) {
+			updateView(e.getMessage());
+		}
+		if (cm.getType() != ChatMessage.LOGIN || cm.getMessage() != true) {
+			updateView("User name taken.");
+			return false;
+		}
+
+		// creates the Thread to listen from the server
+		new ListenFromServer().start();
+
 		// success we inform the caller that it worked
 		return true;
 	}
@@ -81,9 +97,11 @@ public class Client {
 				msgText, username, to);
 		return sendMessage(msg);
 	}
+
 	public void doGetUserList() {
 		sendMessage(new ChatMessage<String>(ChatMessage.WHOISIN, "", null, null));
 	}
+
 	public void doLogout() {
 		sendMessage(new ChatMessage<String>(ChatMessage.LOGOUT, "", null, null));
 	}

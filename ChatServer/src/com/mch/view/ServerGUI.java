@@ -1,6 +1,7 @@
 package com.mch.view;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,7 +44,7 @@ public class ServerGUI extends JFrame implements ActionListener,
 
 	private void addGUIElements() {
 		// in the NorthPanel the PortNumber the Start and Stop buttons
-		JPanel north = new JPanel();
+		JPanel north = new JPanel(new FlowLayout());
 		north.add(new JLabel("Port number: "));
 		txtPortNumber = new JTextField("  " + port);
 		north.add(txtPortNumber);
@@ -108,7 +109,7 @@ public class ServerGUI extends JFrame implements ActionListener,
 		// create a new Server
 		server = new Server(port, this);
 		// and start it as a thread
-		new ServerRunning().start();
+		new ServerBackgroundWorker().start();
 		btnStartStop.setText("Stop");
 		txtPortNumber.setEditable(false);
 	}
@@ -160,7 +161,7 @@ public class ServerGUI extends JFrame implements ActionListener,
 
 	// a single thread to run the Server
 	// otherwise the GUI would be unresponsive
-	class ServerRunning extends Thread {
+	private class ServerBackgroundWorker extends Thread {
 		public void run() {
 			System.out.println("Starting server...");
 			server.start(); // should execute until if fails

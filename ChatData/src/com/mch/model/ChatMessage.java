@@ -16,6 +16,7 @@ public class ChatMessage<T> implements Serializable {
 	public static final int WHOISIN = 0;
 	public static final int MESSAGE = 1;
 	public static final int LOGOUT = 2;
+	public static final int LOGIN = 3;
 	
 	public ChatMessage(int type, T message, String from, String to) {
 		this.type = type;
