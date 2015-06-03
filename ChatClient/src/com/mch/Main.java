@@ -1,4 +1,5 @@
-package com.mch;
+package com.mch.controller;
+
 
 import com.mch.config.Config;
 import com.mch.view.ClientGUI;
